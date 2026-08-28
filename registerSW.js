@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/flip7-scorer/sw.js', { scope: '/flip7-scorer/' })})}
