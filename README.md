@@ -12,6 +12,7 @@ A lightweight score tracker for the [Flip7](https://officialgamerules.org/game-r
 - Game ends when any player reaches 200 points after a round
 - Winner screen with Play Again or New Game options
 - Progress saved in browser (survives refresh)
+- All-time victory counts per player stored in localStorage
 - Installable PWA for offline use
 
 ## Local Development

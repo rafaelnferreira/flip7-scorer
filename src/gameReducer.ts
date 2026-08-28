@@ -17,6 +17,7 @@ export interface GameState {
   round: number;
   roundScores: Record<string, string>;
   winner: Winner | null;
+  victoriesRecorded: boolean;
 }
 
 export type GameAction =
@@ -25,6 +26,7 @@ export type GameAction =
   | { type: 'FINISH_ROUND' }
   | { type: 'NEW_GAME' }
   | { type: 'PLAY_AGAIN' }
+  | { type: 'MARK_VICTORIES_RECORDED' }
   | { type: 'RESTORE'; state: GameState };
 
 export const WINNING_SCORE = 200;
@@ -38,6 +40,7 @@ export const initialState: GameState = {
   round: 1,
   roundScores: {},
   winner: null,
+  victoriesRecorded: false,
 };
 
 function createPlayerId(index: number): string {
@@ -82,6 +85,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         round: 1,
         roundScores: emptyRoundScores(players),
         winner: null,
+        victoriesRecorded: false,
       };
     }
 
@@ -110,6 +114,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           players: updatedPlayers,
           roundScores: emptyRoundScores(updatedPlayers),
           winner,
+          victoriesRecorded: false,
         };
       }
 
@@ -136,8 +141,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         round: 1,
         roundScores: emptyRoundScores(resetPlayers),
         winner: null,
+        victoriesRecorded: false,
       };
     }
+
+    case 'MARK_VICTORIES_RECORDED':
+      return {
+        ...state,
+        victoriesRecorded: true,
+      };
 
     case 'RESTORE':
       return action.state;
@@ -157,7 +169,10 @@ export function loadSavedState(): GameState | null {
     if (!parsed.phase || !Array.isArray(parsed.players)) {
       return null;
     }
-    return parsed;
+    return {
+      ...parsed,
+      victoriesRecorded: parsed.victoriesRecorded ?? false,
+    };
   } catch {
     return null;
   }

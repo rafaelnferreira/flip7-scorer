@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../gameReducer';
+import { VictoryLeaderboard } from './VictoryLeaderboard';
 
 interface PlayerSetupProps {
   onStart: (playerNames: string[]) => void;
+  leaderboard: Array<{ name: string; wins: number }>;
+  getWins: (name: string) => number;
 }
 
-export function PlayerSetup({ onStart }: PlayerSetupProps) {
+export function PlayerSetup({ onStart, leaderboard, getWins }: PlayerSetupProps) {
   const [playerCount, setPlayerCount] = useState(MIN_PLAYERS);
   const [names, setNames] = useState<string[]>(
     Array.from({ length: MIN_PLAYERS }, (_, index) => `Player ${index + 1}`),
@@ -46,6 +49,8 @@ export function PlayerSetup({ onStart }: PlayerSetupProps) {
       <h1>Flip7 Scorer</h1>
       <p className="subtitle">Track scores until someone reaches 200 points.</p>
 
+      <VictoryLeaderboard entries={leaderboard} />
+
       <label className="field">
         <span>Number of players</span>
         <input
@@ -59,18 +64,24 @@ export function PlayerSetup({ onStart }: PlayerSetupProps) {
       </label>
 
       <div className="player-names">
-        {names.map((name, index) => (
-          <label key={index} className="field">
-            <span>Player {index + 1}</span>
-            <input
-              type="text"
-              value={name}
-              onChange={(event) => handleNameChange(index, event.target.value)}
-              placeholder={`Player ${index + 1}`}
-              aria-label={`Player ${index + 1} name`}
-            />
-          </label>
-        ))}
+        {names.map((name, index) => {
+          const wins = getWins(name);
+          return (
+            <label key={index} className="field">
+              <span>
+                Player {index + 1}
+                {wins > 0 && <span className="victory-badge">{wins}W</span>}
+              </span>
+              <input
+                type="text"
+                value={name}
+                onChange={(event) => handleNameChange(index, event.target.value)}
+                placeholder={`Player ${index + 1}`}
+                aria-label={`Player ${index + 1} name`}
+              />
+            </label>
+          );
+        })}
       </div>
 
       <button

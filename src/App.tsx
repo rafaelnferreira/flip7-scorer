@@ -3,9 +3,11 @@ import { PlayerSetup } from './components/PlayerSetup';
 import { RoundInput } from './components/RoundInput';
 import { Scoreboard } from './components/Scoreboard';
 import { useGame } from './hooks/useGame';
+import { useVictories } from './hooks/useVictories';
 
 export default function App() {
-  const { state, actions } = useGame();
+  const { recordVictories, getWins, leaderboard } = useVictories();
+  const { state, actions } = useGame({ onRecordVictories: recordVictories });
 
   const handleNewGame = () => {
     if (
@@ -28,11 +30,13 @@ export default function App() {
       )}
 
       <main className="app-main">
-        {state.phase === 'setup' && <PlayerSetup onStart={actions.startGame} />}
+        {state.phase === 'setup' && (
+          <PlayerSetup onStart={actions.startGame} leaderboard={leaderboard} getWins={getWins} />
+        )}
 
         {state.phase === 'playing' && (
           <>
-            <Scoreboard players={state.players} round={state.round} />
+            <Scoreboard players={state.players} round={state.round} getWins={getWins} />
             <RoundInput
               players={state.players}
               roundScores={state.roundScores}
@@ -44,9 +48,10 @@ export default function App() {
 
         {state.phase === 'gameOver' && state.winner && (
           <>
-            <Scoreboard players={state.players} round={state.round} />
+            <Scoreboard players={state.players} round={state.round} getWins={getWins} />
             <GameOver
               winner={state.winner}
+              getWins={getWins}
               onNewGame={actions.newGame}
               onPlayAgain={actions.playAgain}
             />

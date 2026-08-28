@@ -8,7 +8,11 @@ import {
   type GameState,
 } from '../gameReducer';
 
-export function useGame() {
+interface UseGameOptions {
+  onRecordVictories?: (playerNames: string[]) => void;
+}
+
+export function useGame({ onRecordVictories }: UseGameOptions = {}) {
   const [state, dispatch] = useReducer(
     gameReducer,
     initialState,
@@ -18,6 +22,13 @@ export function useGame() {
   useEffect(() => {
     saveState(state);
   }, [state]);
+
+  useEffect(() => {
+    if (state.phase === 'gameOver' && state.winner && !state.victoriesRecorded) {
+      onRecordVictories?.(state.winner.players.map((player) => player.name));
+      dispatch({ type: 'MARK_VICTORIES_RECORDED' } satisfies GameAction);
+    }
+  }, [state.phase, state.winner, state.victoriesRecorded, onRecordVictories]);
 
   const actions = {
     startGame: (playerNames: string[]) =>
