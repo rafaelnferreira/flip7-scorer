@@ -85,6 +85,35 @@ export function getTotalWins(wins: GameWinMap, playerName: string): number {
   return Object.values(wins).reduce((sum, byPlayer) => sum + (byPlayer[key] ?? 0), 0);
 }
 
+/** Flip7 is the only game with a full play/completion flow; others are win counters only. */
+export function isFlip7Game(game: Pick<TrackedGame, 'id'>): boolean {
+  return game.id === DEFAULT_GAME_ID;
+}
+
+export type PlayerWinDisplay =
+  | { gameWins: number; showBadges: true; totalWins: number }
+  | { gameWins: number; showBadges: false; totalWins: null };
+
+/**
+ * For Flip7, show total + per-game badges (completed Flip7 games matter).
+ * For other games, only expose the win count — nothing has been "completed" there.
+ */
+export function getPlayerWinDisplay(
+  activeGame: TrackedGame,
+  wins: GameWinMap,
+  playerName: string,
+): PlayerWinDisplay {
+  const gameWins = getGameWins(wins, activeGame.id, playerName);
+  if (isFlip7Game(activeGame)) {
+    return {
+      gameWins,
+      showBadges: true,
+      totalWins: getTotalWins(wins, playerName),
+    };
+  }
+  return { gameWins, showBadges: false, totalWins: null };
+}
+
 export function adjustWin(
   state: MultiGameScoresState,
   gameId: string,
