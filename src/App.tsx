@@ -74,8 +74,7 @@ export default function App() {
             players={roster}
             games={multiGame.games}
             activeGame={multiGame.activeGame}
-            getGameWins={multiGame.getGameWins}
-            getTotalWins={multiGame.getTotalWins}
+            wins={multiGame.wins}
             onIncrement={multiGame.increment}
             onDecrement={multiGame.decrement}
             onFlipGame={multiGame.flipGame}

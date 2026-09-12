@@ -1,12 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import type { TrackedGame } from '../multiGameScores';
+import { getPlayerWinDisplay, type GameWinMap, type TrackedGame } from '../multiGameScores';
 
 interface ScoreTrackerProps {
   players: string[];
   games: TrackedGame[];
   activeGame: TrackedGame | undefined;
-  getGameWins: (playerName: string) => number;
-  getTotalWins: (playerName: string) => number;
+  wins: GameWinMap;
   onIncrement: (gameId: string, playerName: string) => void;
   onDecrement: (gameId: string, playerName: string) => void;
   onFlipGame: (direction: -1 | 1) => void;
@@ -17,8 +16,7 @@ export function ScoreTracker({
   players,
   games,
   activeGame,
-  getGameWins,
-  getTotalWins,
+  wins,
   onIncrement,
   onDecrement,
   onFlipGame,
@@ -116,33 +114,37 @@ export function ScoreTracker({
 
       <ul className="tracker-list">
         {players.map((name) => {
-          const gameWins = getGameWins(name);
-          const totalWins = getTotalWins(name);
+          const display = getPlayerWinDisplay(activeGame, wins, name);
           return (
             <li key={name} className="tracker-row">
               <div className="tracker-player">
                 <span className="tracker-player-name">{name}</span>
-                <span className="tracker-badges">
-                  <span className="victory-badge" title="Total wins">
-                    {totalWins}W
+                {display.showBadges && (
+                  <span className="tracker-badges">
+                    <span className="victory-badge" title="Total wins">
+                      {display.totalWins}W
+                    </span>
+                    <span
+                      className="victory-badge victory-badge--game"
+                      title={`${activeGame.name} wins`}
+                    >
+                      {display.gameWins}G
+                    </span>
                   </span>
-                  <span className="victory-badge victory-badge--game" title={`${activeGame.name} wins`}>
-                    {gameWins}G
-                  </span>
-                </span>
+                )}
               </div>
               <div className="tracker-controls">
                 <button
                   type="button"
                   className="btn btn-step"
                   onClick={() => onDecrement(activeGame.id, name)}
-                  disabled={gameWins <= 0}
+                  disabled={display.gameWins <= 0}
                   aria-label={`Decrease ${name} wins for ${activeGame.name}`}
                 >
                   −
                 </button>
                 <span className="tracker-count" aria-label={`${name} wins for ${activeGame.name}`}>
-                  {gameWins}
+                  {display.gameWins}
                 </span>
                 <button
                   type="button"
