@@ -6,13 +6,25 @@ interface PlayerSetupProps {
   onStart: (playerNames: string[]) => void;
   leaderboard: Array<{ name: string; wins: number }>;
   getWins: (name: string) => number;
+  initialNames?: string[];
 }
 
-export function PlayerSetup({ onStart, leaderboard, getWins }: PlayerSetupProps) {
-  const [playerCount, setPlayerCount] = useState(MIN_PLAYERS);
-  const [names, setNames] = useState<string[]>(
-    Array.from({ length: MIN_PLAYERS }, (_, index) => `Player ${index + 1}`),
-  );
+function defaultNames(count: number): string[] {
+  return Array.from({ length: count }, (_, index) => `Player ${index + 1}`);
+}
+
+export function PlayerSetup({
+  onStart,
+  leaderboard,
+  getWins,
+  initialNames = [],
+}: PlayerSetupProps) {
+  const seededNames =
+    initialNames.length >= MIN_PLAYERS
+      ? initialNames.slice(0, MAX_PLAYERS)
+      : defaultNames(MIN_PLAYERS);
+  const [playerCount, setPlayerCount] = useState(seededNames.length);
+  const [names, setNames] = useState<string[]>(seededNames);
 
   useEffect(() => {
     setNames((current) => {

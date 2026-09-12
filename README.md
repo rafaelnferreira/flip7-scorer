@@ -13,7 +13,10 @@ A lightweight score tracker for the [Flip7](https://officialgamerules.org/game-r
 - Winner screen with Play Again or New Game options
 - Progress saved in browser (survives refresh)
 - All-time victory counts per player stored in localStorage
+- **Scores** screen: flip between games (Flip7 by default), +/− win counters per player, total and per-game win badges
+- Add custom games (e.g. Magic the Gathering); player roster shared from Play setup
 - Installable PWA for offline use
+- Compact Scores UI sized for a quarter of an iPad screen
 
 ## Local Development
 
