@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { IdentifiedPlayer } from '../player';
 import {
   addGame,
   adjustWin,
@@ -6,24 +7,38 @@ import {
   getGameWins,
   getTotalWins,
   loadMultiGameScores,
+  migrateWinsToPlayerIds,
   saveMultiGameScores,
   setActiveGame,
   type MultiGameScoresState,
 } from '../multiGameScores';
 
-export function useMultiGameScores() {
+export function useMultiGameScores(roster: IdentifiedPlayer[] = []) {
   const [state, setState] = useState<MultiGameScoresState>(loadMultiGameScores);
 
   useEffect(() => {
     saveMultiGameScores(state);
   }, [state]);
 
-  const increment = useCallback((gameId: string, playerName: string) => {
-    setState((current) => adjustWin(current, gameId, playerName, 1));
+  useEffect(() => {
+    if (roster.length === 0) {
+      return;
+    }
+    setState((current) => {
+      const wins = migrateWinsToPlayerIds(current.wins, roster);
+      if (JSON.stringify(wins) === JSON.stringify(current.wins)) {
+        return current;
+      }
+      return { ...current, wins };
+    });
+  }, [roster]);
+
+  const increment = useCallback((gameId: string, playerId: string) => {
+    setState((current) => adjustWin(current, gameId, playerId, 1));
   }, []);
 
-  const decrement = useCallback((gameId: string, playerName: string) => {
-    setState((current) => adjustWin(current, gameId, playerName, -1));
+  const decrement = useCallback((gameId: string, playerId: string) => {
+    setState((current) => adjustWin(current, gameId, playerId, -1));
   }, []);
 
   const createGame = useCallback((name: string) => {
@@ -59,8 +74,8 @@ export function useMultiGameScores() {
     createGame,
     selectGame,
     flipGame,
-    getGameWins: (playerName: string) =>
-      activeGame ? getGameWins(state.wins, activeGame.id, playerName) : 0,
-    getTotalWins: (playerName: string) => getTotalWins(state.wins, playerName),
+    getGameWins: (playerId: string) =>
+      activeGame ? getGameWins(state.wins, activeGame.id, playerId) : 0,
+    getTotalWins: (playerId: string) => getTotalWins(state.wins, playerId),
   };
 }

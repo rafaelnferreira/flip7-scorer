@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
-import { loadRoster, saveRoster } from '../roster';
+import { loadRoster, saveRoster, type RosterPlayer } from '../roster';
 
 export function useRoster() {
-  const [roster, setRoster] = useState<string[]>(loadRoster);
+  const [roster, setRoster] = useState<RosterPlayer[]>(loadRoster);
 
-  const updateRoster = useCallback((playerNames: string[]) => {
-    const saved = saveRoster(playerNames);
+  const updateRoster = useCallback((players: Array<{ id?: string; name: string }>) => {
+    const saved = saveRoster(players);
     setRoster(saved);
     return saved;
   }, []);
