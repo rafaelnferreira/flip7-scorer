@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyRoundScoreInput,
   formatWinnerMessage,
   gameReducer,
   initialState,
@@ -29,6 +30,29 @@ describe('sanitizeRoundScore', () => {
     expect(sanitizeRoundScore('-5')).toEqual({ value: '', rejectedNegative: true });
     expect(sanitizeRoundScore(' -5')).toEqual({ value: '', rejectedNegative: true });
     expect(sanitizeRoundScore('5-')).toEqual({ value: '', rejectedNegative: true });
+  });
+});
+
+describe('applyRoundScoreInput', () => {
+  it('keeps typed negatives visible and stores them as empty (0)', () => {
+    expect(applyRoundScoreInput('-')).toEqual({
+      displayed: '-',
+      stored: '',
+      rejectedNegative: true,
+    });
+    expect(applyRoundScoreInput('-5')).toEqual({
+      displayed: '-5',
+      stored: '',
+      rejectedNegative: true,
+    });
+  });
+
+  it('does not turn sequential - then 5 into a stored +5', () => {
+    const afterMinus = applyRoundScoreInput('-');
+    const afterDigits = applyRoundScoreInput(`${afterMinus.displayed}5`);
+    expect(afterDigits.displayed).toBe('-5');
+    expect(afterDigits.stored).toBe('');
+    expect(afterDigits.rejectedNegative).toBe(true);
   });
 });
 

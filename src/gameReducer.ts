@@ -62,6 +62,23 @@ export function sanitizeRoundScore(value: string): {
   return { value: value.replace(/\D/g, ''), rejectedNegative: false };
 }
 
+/** Keep negatives visible in the field so typing - then 5 cannot become +5. */
+export function applyRoundScoreInput(raw: string): {
+  displayed: string;
+  stored: string;
+  rejectedNegative: boolean;
+} {
+  const sanitized = sanitizeRoundScore(raw);
+  if (sanitized.rejectedNegative) {
+    return { displayed: raw, stored: '', rejectedNegative: true };
+  }
+  return {
+    displayed: sanitized.value,
+    stored: sanitized.value,
+    rejectedNegative: false,
+  };
+}
+
 function parseScore(value: string): number {
   if (!value) {
     return 0;

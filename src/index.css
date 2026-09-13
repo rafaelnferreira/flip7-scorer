@@ -167,6 +167,10 @@ input[type='text']:focus {
   border-color: var(--accent);
 }
 
+input[type='text'][aria-invalid='true'] {
+  border-color: var(--warning);
+}
+
 .player-names {
   margin-bottom: 0.5rem;
 }
