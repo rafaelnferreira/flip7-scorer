@@ -7,9 +7,10 @@ import {
   type GameAction,
   type GameState,
 } from '../gameReducer';
+import type { IdentifiedPlayer } from '../player';
 
 interface UseGameOptions {
-  onRecordVictories?: (playerNames: string[]) => void;
+  onRecordVictories?: (winners: IdentifiedPlayer[]) => void;
 }
 
 export function useGame({ onRecordVictories }: UseGameOptions = {}) {
@@ -25,14 +26,16 @@ export function useGame({ onRecordVictories }: UseGameOptions = {}) {
 
   useEffect(() => {
     if (state.phase === 'gameOver' && state.winner && !state.victoriesRecorded) {
-      onRecordVictories?.(state.winner.players.map((player) => player.name));
+      onRecordVictories?.(
+        state.winner.players.map((player) => ({ id: player.id, name: player.name })),
+      );
       dispatch({ type: 'MARK_VICTORIES_RECORDED' } satisfies GameAction);
     }
   }, [state.phase, state.winner, state.victoriesRecorded, onRecordVictories]);
 
   const actions = {
-    startGame: (playerNames: string[]) =>
-      dispatch({ type: 'START_GAME', playerNames } satisfies GameAction),
+    startGame: (players: Array<{ id?: string; name: string }>) =>
+      dispatch({ type: 'START_GAME', players } satisfies GameAction),
     setRoundScore: (playerId: string, value: string) =>
       dispatch({ type: 'SET_ROUND_SCORE', playerId, value } satisfies GameAction),
     finishRound: () => dispatch({ type: 'FINISH_ROUND' } satisfies GameAction),

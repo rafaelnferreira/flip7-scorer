@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import type { IdentifiedPlayer } from '../player';
 import {
   getVictoryCount,
   getVictoryLeaderboard,
@@ -7,17 +8,19 @@ import {
   type VictoryRecord,
 } from '../victories';
 
-export function useVictories() {
-  const [victories, setVictories] = useState<VictoryRecord>(loadVictories);
+export function useVictories(roster: IdentifiedPlayer[] = []) {
+  const [victories, setVictories] = useState<VictoryRecord>(() => loadVictories(roster));
+  const rosterRef = useRef(roster);
+  rosterRef.current = roster;
 
-  const recordVictories = useCallback((playerNames: string[]) => {
-    const updated = persistVictories(playerNames);
+  const recordVictories = useCallback((winners: IdentifiedPlayer[]) => {
+    const updated = persistVictories(winners, rosterRef.current);
     setVictories(updated);
     return updated;
   }, []);
 
   const getWins = useCallback(
-    (name: string) => getVictoryCount(victories, name),
+    (playerId: string) => getVictoryCount(victories, playerId),
     [victories],
   );
 

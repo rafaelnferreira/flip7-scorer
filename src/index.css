@@ -302,6 +302,12 @@ input[type='text']:focus {
   color: var(--text-muted);
 }
 
+.field-error {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--warning);
+}
+
 .round-fields {
   display: flex;
   flex-direction: column;

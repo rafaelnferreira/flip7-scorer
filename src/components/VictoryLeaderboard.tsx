@@ -1,5 +1,7 @@
+import { displayPlayerLabel } from '../player';
+
 interface VictoryLeaderboardProps {
-  entries: Array<{ name: string; wins: number }>;
+  entries: Array<{ id: string; name: string; wins: number }>;
 }
 
 export function VictoryLeaderboard({ entries }: VictoryLeaderboardProps) {
@@ -12,8 +14,8 @@ export function VictoryLeaderboard({ entries }: VictoryLeaderboardProps) {
       <h2>All-time wins</h2>
       <ul className="victory-list">
         {entries.map((entry) => (
-          <li key={entry.name} className="victory-item">
-            <span className="victory-item__name">{entry.name}</span>
+          <li key={entry.id} className="victory-item">
+            <span className="victory-item__name">{displayPlayerLabel(entry, entries)}</span>
             <span className="victory-item__wins">
               {entry.wins} {entry.wins === 1 ? 'win' : 'wins'}
             </span>

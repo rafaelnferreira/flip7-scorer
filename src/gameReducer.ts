@@ -1,3 +1,5 @@
+import { displayPlayerLabel } from './player';
+
 export type GamePhase = 'setup' | 'playing' | 'gameOver';
 
 export interface Player {
@@ -21,7 +23,7 @@ export interface GameState {
 }
 
 export type GameAction =
-  | { type: 'START_GAME'; playerNames: string[] }
+  | { type: 'START_GAME'; players: Array<{ id?: string; name: string }> }
   | { type: 'SET_ROUND_SCORE'; playerId: string; value: string }
   | { type: 'FINISH_ROUND' }
   | { type: 'NEW_GAME' }
@@ -47,11 +49,28 @@ function createPlayerId(index: number): string {
   return `player-${index}-${crypto.randomUUID()}`;
 }
 
+export function sanitizeRoundScore(value: string): {
+  value: string;
+  rejectedNegative: boolean;
+} {
+  if (!value) {
+    return { value: '', rejectedNegative: false };
+  }
+  if (value.includes('-')) {
+    return { value: '', rejectedNegative: true };
+  }
+  return { value: value.replace(/\D/g, ''), rejectedNegative: false };
+}
+
 function parseScore(value: string): number {
   if (!value) {
     return 0;
   }
-  return Number.parseInt(value, 10);
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0;
+  }
+  return parsed;
 }
 
 function emptyRoundScores(players: Player[]): Record<string, string> {
@@ -73,9 +92,9 @@ function findWinner(players: Player[]): Winner | null {
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'START_GAME': {
-      const players: Player[] = action.playerNames.map((name, index) => ({
-        id: createPlayerId(index),
-        name: name.trim() || `Player ${index + 1}`,
+      const players: Player[] = action.players.map((player, index) => ({
+        id: player.id?.trim() || createPlayerId(index),
+        name: player.name.trim() || `Player ${index + 1}`,
         total: 0,
       }));
 
@@ -90,12 +109,15 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'SET_ROUND_SCORE': {
-      const sanitized = action.value.replace(/\D/g, '');
+      const sanitized = sanitizeRoundScore(action.value);
+      if (sanitized.rejectedNegative) {
+        return state;
+      }
       return {
         ...state,
         roundScores: {
           ...state.roundScores,
-          [action.playerId]: sanitized,
+          [action.playerId]: sanitized.value,
         },
       };
     }
@@ -186,8 +208,11 @@ export function saveState(state: GameState): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-export function formatWinnerMessage(winner: Winner): string {
-  const names = winner.players.map((player) => player.name);
+export function formatWinnerMessage(
+  winner: Winner,
+  allPlayers: Array<{ id: string; name: string }> = winner.players,
+): string {
+  const names = winner.players.map((player) => displayPlayerLabel(player, allPlayers));
   if (names.length === 1) {
     return `${names[0]} wins with ${winner.score} points!`;
   }

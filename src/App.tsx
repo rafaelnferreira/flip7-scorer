@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ConfirmDialog } from './components/ConfirmDialog';
 import { GameOver } from './components/GameOver';
 import { PlayerSetup } from './components/PlayerSetup';
 import { RoundInput } from './components/RoundInput';
@@ -8,35 +9,54 @@ import { useGame } from './hooks/useGame';
 import { useMultiGameScores } from './hooks/useMultiGameScores';
 import { useRoster } from './hooks/useRoster';
 import { useVictories } from './hooks/useVictories';
+import type { IdentifiedPlayer } from './player';
 
 type AppScreen = 'play' | 'scores';
 
 export default function App() {
   const [screen, setScreen] = useState<AppScreen>('play');
-  const { recordVictories, getWins, leaderboard } = useVictories();
+  const [confirmNewGame, setConfirmNewGame] = useState(false);
   const { roster, updateRoster } = useRoster();
-  const multiGame = useMultiGameScores();
+  const { recordVictories, getWins, leaderboard } = useVictories(roster);
+  const multiGame = useMultiGameScores(roster);
   const { state, actions } = useGame({ onRecordVictories: recordVictories });
 
   // Keep Scores roster in sync with an in-progress Flip7 session (e.g. after refresh).
   useEffect(() => {
-    if (state.players.length >= 2 && roster.length === 0) {
-      updateRoster(state.players.map((player) => player.name));
+    if (state.players.length < 2) {
+      return;
     }
-  }, [state.players, roster.length, updateRoster]);
+
+    if (roster.length === 0) {
+      updateRoster(state.players.map((player) => ({ id: player.id, name: player.name })));
+      return;
+    }
+
+    const sameSeats =
+      roster.length === state.players.length &&
+      roster.every((player, index) => player.name === state.players[index].name);
+    const idsDiffer = roster.some((player, index) => player.id !== state.players[index].id);
+    if (sameSeats && idsDiffer) {
+      updateRoster(state.players.map((player) => ({ id: player.id, name: player.name })));
+    }
+  }, [state.players, roster, updateRoster]);
 
   const handleNewGame = () => {
-    if (
-      state.phase === 'setup' ||
-      window.confirm('Start a new game? Current progress will be lost.')
-    ) {
+    if (state.phase === 'setup') {
       actions.newGame();
+      return;
     }
+    setConfirmNewGame(true);
   };
 
-  const handleStartGame = (playerNames: string[]) => {
-    updateRoster(playerNames);
-    actions.startGame(playerNames);
+  const confirmStartNewGame = () => {
+    setConfirmNewGame(false);
+    actions.newGame();
+  };
+
+  const handleStartGame = (players: IdentifiedPlayer[]) => {
+    updateRoster(players);
+    actions.startGame(players);
   };
 
   return (
@@ -87,7 +107,7 @@ export default function App() {
             onStart={handleStartGame}
             leaderboard={leaderboard}
             getWins={getWins}
-            initialNames={roster}
+            initialPlayers={roster}
           />
         )}
 
@@ -108,6 +128,7 @@ export default function App() {
             <Scoreboard players={state.players} round={state.round} getWins={getWins} />
             <GameOver
               winner={state.winner}
+              players={state.players}
               getWins={getWins}
               onNewGame={actions.newGame}
               onPlayAgain={actions.playAgain}
@@ -115,6 +136,16 @@ export default function App() {
           </>
         )}
       </main>
+
+      {confirmNewGame && (
+        <ConfirmDialog
+          title="Start a new game?"
+          message="Current progress will be lost."
+          confirmLabel="New Game"
+          onConfirm={confirmStartNewGame}
+          onCancel={() => setConfirmNewGame(false)}
+        />
+      )}
     </div>
   );
 }
