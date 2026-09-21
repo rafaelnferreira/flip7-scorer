@@ -3,7 +3,7 @@ export interface TrackedGame {
   name: string;
 }
 
-/** wins[gameId][playerName] = win count */
+/** wins[gameId][playerId] = win count */
 export type GameWinMap = Record<string, Record<string, number>>;
 
 export interface MultiGameScoresState {
@@ -21,10 +21,6 @@ export const defaultMultiGameState: MultiGameScoresState = {
   activeGameId: DEFAULT_GAME_ID,
   wins: {},
 };
-
-function normalizeName(name: string): string {
-  return name.trim() || 'Unknown';
-}
 
 function createGameId(): string {
   return `game-${crypto.randomUUID()}`;
@@ -75,14 +71,13 @@ export function saveMultiGameScores(state: MultiGameScoresState): void {
 export function getGameWins(
   wins: GameWinMap,
   gameId: string,
-  playerName: string,
+  playerId: string,
 ): number {
-  return wins[gameId]?.[normalizeName(playerName)] ?? 0;
+  return wins[gameId]?.[playerId] ?? 0;
 }
 
-export function getTotalWins(wins: GameWinMap, playerName: string): number {
-  const key = normalizeName(playerName);
-  return Object.values(wins).reduce((sum, byPlayer) => sum + (byPlayer[key] ?? 0), 0);
+export function getTotalWins(wins: GameWinMap, playerId: string): number {
+  return Object.values(wins).reduce((sum, byPlayer) => sum + (byPlayer[playerId] ?? 0), 0);
 }
 
 /** Flip7 is the only game with a full play/completion flow; others are win counters only. */
@@ -101,26 +96,59 @@ export type PlayerWinDisplay =
 export function getPlayerWinDisplay(
   activeGame: TrackedGame,
   wins: GameWinMap,
-  playerName: string,
+  playerId: string,
 ): PlayerWinDisplay {
-  const gameWins = getGameWins(wins, activeGame.id, playerName);
+  const gameWins = getGameWins(wins, activeGame.id, playerId);
   if (isFlip7Game(activeGame)) {
     return {
       gameWins,
       showBadges: true,
-      totalWins: getTotalWins(wins, playerName),
+      totalWins: getTotalWins(wins, playerId),
     };
   }
   return { gameWins, showBadges: false, totalWins: null };
 }
 
+export function migrateWinsToPlayerIds(
+  wins: GameWinMap,
+  roster: Array<{ id: string; name: string }>,
+): GameWinMap {
+  const remapped: GameWinMap = {};
+
+  for (const [gameId, byPlayer] of Object.entries(wins)) {
+    const next: Record<string, number> = {};
+    const claimed = new Set<string>();
+
+    for (const [key, count] of Object.entries(byPlayer)) {
+      if (roster.some((player) => player.id === key)) {
+        next[key] = (next[key] ?? 0) + count;
+        claimed.add(key);
+        continue;
+      }
+
+      const match = roster.find((player) => player.name === key && !claimed.has(player.id));
+      if (match) {
+        next[match.id] = (next[match.id] ?? 0) + count;
+        claimed.add(match.id);
+        continue;
+      }
+
+      next[key] = (next[key] ?? 0) + count;
+    }
+
+    remapped[gameId] = next;
+  }
+
+  return remapped;
+}
+
 export function adjustWin(
   state: MultiGameScoresState,
   gameId: string,
-  playerName: string,
+  playerId: string,
   delta: number,
 ): MultiGameScoresState {
-  const key = normalizeName(playerName);
+  const key = playerId;
   const current = state.wins[gameId]?.[key] ?? 0;
   const next = Math.max(0, current + delta);
 

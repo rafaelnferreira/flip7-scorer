@@ -1,43 +1,47 @@
 import { useEffect, useState } from 'react';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../gameReducer';
+import { createPlayerId, type IdentifiedPlayer } from '../player';
 import { VictoryLeaderboard } from './VictoryLeaderboard';
 
 interface PlayerSetupProps {
-  onStart: (playerNames: string[]) => void;
-  leaderboard: Array<{ name: string; wins: number }>;
-  getWins: (name: string) => number;
-  initialNames?: string[];
+  onStart: (players: IdentifiedPlayer[]) => void;
+  leaderboard: Array<{ id: string; name: string; wins: number }>;
+  getWins: (playerId: string) => number;
+  initialPlayers?: IdentifiedPlayer[];
 }
 
-function defaultNames(count: number): string[] {
-  return Array.from({ length: count }, (_, index) => `Player ${index + 1}`);
+function defaultPlayers(count: number): IdentifiedPlayer[] {
+  return Array.from({ length: count }, (_, index) => ({
+    id: createPlayerId(),
+    name: `Player ${index + 1}`,
+  }));
 }
 
 export function PlayerSetup({
   onStart,
   leaderboard,
   getWins,
-  initialNames = [],
+  initialPlayers = [],
 }: PlayerSetupProps) {
-  const seededNames =
-    initialNames.length >= MIN_PLAYERS
-      ? initialNames.slice(0, MAX_PLAYERS)
-      : defaultNames(MIN_PLAYERS);
-  const [playerCount, setPlayerCount] = useState(seededNames.length);
-  const [names, setNames] = useState<string[]>(seededNames);
+  const seededPlayers =
+    initialPlayers.length >= MIN_PLAYERS
+      ? initialPlayers.slice(0, MAX_PLAYERS)
+      : defaultPlayers(MIN_PLAYERS);
+  const [playerCount, setPlayerCount] = useState(seededPlayers.length);
+  const [players, setPlayers] = useState<IdentifiedPlayer[]>(seededPlayers);
 
   useEffect(() => {
-    setNames((current) => {
+    setPlayers((current) => {
       if (playerCount === current.length) {
         return current;
       }
       if (playerCount > current.length) {
         return [
           ...current,
-          ...Array.from(
-            { length: playerCount - current.length },
-            (_, index) => `Player ${current.length + index + 1}`,
-          ),
+          ...Array.from({ length: playerCount - current.length }, (_, index) => ({
+            id: createPlayerId(),
+            name: `Player ${current.length + index + 1}`,
+          })),
         ];
       }
       return current.slice(0, playerCount);
@@ -52,8 +56,10 @@ export function PlayerSetup({
     setPlayerCount(Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, parsed)));
   };
 
-  const handleNameChange = (index: number, value: string) => {
-    setNames((current) => current.map((name, i) => (i === index ? value : name)));
+  const handleNameChange = (playerId: string, value: string) => {
+    setPlayers((current) =>
+      current.map((player) => (player.id === playerId ? { ...player, name: value } : player)),
+    );
   };
 
   return (
@@ -76,18 +82,18 @@ export function PlayerSetup({
       </label>
 
       <div className="player-names">
-        {names.map((name, index) => {
-          const wins = getWins(name);
+        {players.map((player, index) => {
+          const wins = getWins(player.id);
           return (
-            <label key={index} className="field">
+            <label key={player.id} className="field">
               <span>
                 Player {index + 1}
                 {wins > 0 && <span className="victory-badge">{wins}W</span>}
               </span>
               <input
                 type="text"
-                value={name}
-                onChange={(event) => handleNameChange(index, event.target.value)}
+                value={player.name}
+                onChange={(event) => handleNameChange(player.id, event.target.value)}
                 placeholder={`Player ${index + 1}`}
                 aria-label={`Player ${index + 1} name`}
               />
@@ -99,7 +105,7 @@ export function PlayerSetup({
       <button
         type="button"
         className="btn btn-primary"
-        onClick={() => onStart(names)}
+        onClick={() => onStart(players)}
         disabled={playerCount < MIN_PLAYERS}
       >
         Start Game

@@ -1,10 +1,11 @@
 import type { Player } from '../gameReducer';
 import { WINNING_SCORE } from '../gameReducer';
+import { displayPlayerLabel } from '../player';
 
 interface ScoreboardProps {
   players: Player[];
   round: number;
-  getWins: (name: string) => number;
+  getWins: (playerId: string) => number;
 }
 
 export function Scoreboard({ players, round, getWins }: ScoreboardProps) {
@@ -17,14 +18,15 @@ export function Scoreboard({ players, round, getWins }: ScoreboardProps) {
 
       <div className="scoreboard-grid">
         {players.map((player) => {
-          const wins = getWins(player.name);
+          const wins = getWins(player.id);
+          const label = displayPlayerLabel(player, players);
           return (
             <article
               key={player.id}
               className={`score-card ${player.total >= WINNING_SCORE ? 'score-card--winning' : ''}`}
             >
               <span className="score-card__name">
-                {player.name}
+                {label}
                 {wins > 0 && <span className="victory-badge">{wins}W</span>}
               </span>
               <span className="score-card__total">{player.total}</span>

@@ -167,6 +167,10 @@ input[type='text']:focus {
   border-color: var(--accent);
 }
 
+input[type='text'][aria-invalid='true'] {
+  border-color: var(--warning);
+}
+
 .player-names {
   margin-bottom: 0.5rem;
 }
@@ -300,6 +304,12 @@ input[type='text']:focus {
   margin: 0 0 1rem;
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+.field-error {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--warning);
 }
 
 .round-fields {

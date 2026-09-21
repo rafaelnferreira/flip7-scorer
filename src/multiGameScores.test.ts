@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_GAME_ID,
   DEFAULT_GAME_NAME,
+  adjustWin,
+  defaultMultiGameState,
+  getGameWins,
   getPlayerWinDisplay,
   isFlip7Game,
+  migrateWinsToPlayerIds,
   type GameWinMap,
   type TrackedGame,
 } from './multiGameScores';
@@ -49,5 +53,27 @@ describe('getPlayerWinDisplay', () => {
       showBadges: false,
       totalWins: null,
     });
+  });
+});
+
+describe('player identity in multi-game scores', () => {
+  it('tracks two Alices as separate win counters', () => {
+    let state = defaultMultiGameState;
+    state = adjustWin(state, DEFAULT_GAME_ID, 'alice-1', 2);
+    state = adjustWin(state, DEFAULT_GAME_ID, 'alice-2', 1);
+
+    expect(getGameWins(state.wins, DEFAULT_GAME_ID, 'alice-1')).toBe(2);
+    expect(getGameWins(state.wins, DEFAULT_GAME_ID, 'alice-2')).toBe(1);
+  });
+
+  it('migrates a legacy name key onto only the first matching player', () => {
+    const legacy: GameWinMap = { [DEFAULT_GAME_ID]: { Alice: 5 } };
+    const migrated = migrateWinsToPlayerIds(legacy, [
+      { id: 'alice-1', name: 'Alice' },
+      { id: 'alice-2', name: 'Alice' },
+    ]);
+
+    expect(getGameWins(migrated, DEFAULT_GAME_ID, 'alice-1')).toBe(5);
+    expect(getGameWins(migrated, DEFAULT_GAME_ID, 'alice-2')).toBe(0);
   });
 });
